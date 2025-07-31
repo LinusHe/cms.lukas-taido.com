@@ -73,12 +73,41 @@ const Press: CollectionConfig = {
       },
     },
     {
+      name: "pressType",
+      type: "select",
+      defaultValue: "pdf",
+      required: true,
+      options: [
+        {
+          label: "PDF Document",
+          value: "pdf",
+        },
+        {
+          label: "Video Embed",
+          value: "video",
+        },
+      ],
+      admin: {
+        description: "Choose the type of press content",
+      },
+    },
+    {
       name: "pdfDocument",
       type: "upload",
       relationTo: "documents",
-      required: true,
+      required: false,
       admin: {
+        condition: (data) => data.pressType === "pdf",
         description: "Upload a PDF document",
+      },
+    },
+    {
+      name: "videoUrl",
+      type: "text",
+      required: false,
+      admin: {
+        condition: (data) => data.pressType === "video",
+        description: "Video URL (YouTube, Vimeo, etc.)",
       },
     },
     {
