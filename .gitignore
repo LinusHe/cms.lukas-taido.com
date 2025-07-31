@@ -168,3 +168,6 @@ dist
 media
 documents
 build
+
+payload-backup.*
+media.zip

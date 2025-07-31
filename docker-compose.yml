@@ -5,7 +5,7 @@ services:
   payload:
     image: node:18-alpine
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - .:/home/node/app
       - node_modules:/home/node/app/node_modules
@@ -27,8 +27,6 @@ services:
 
   mongo:
     image: mongo:latest
-    ports:
-      - "27017:27017"
     command:
       - --storageEngine=wiredTiger
     volumes:

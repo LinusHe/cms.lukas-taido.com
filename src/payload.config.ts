@@ -20,7 +20,7 @@ export default buildConfig({
       favicon: "/assets/favicon.ico",
     },
   },
-  cors: ["http://localhost:3000"],
+  cors: ["http://localhost:3000", "https://www.lukas-taido.com", "https://lukas-taido.com"],
   collections: [
     Users,
     Tags,
