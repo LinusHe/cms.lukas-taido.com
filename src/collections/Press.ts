@@ -49,6 +49,14 @@ const Press: CollectionConfig = {
       required: true,
     },
     {
+      name: "publisher",
+      type: "text",
+      required: true,
+      admin: {
+        description: "e.g. Süddeutsche Zeitung, Der Spiegel, etc.",
+      },
+    },
+    {
       name: "date",
       type: "date",
       admin: {
