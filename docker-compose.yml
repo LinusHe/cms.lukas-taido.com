@@ -9,15 +9,21 @@ services:
     volumes:
       - .:/home/node/app
       - node_modules:/home/node/app/node_modules
+      - ./media:/home/node/app/media
+      - ./documents:/home/node/app/documents
     working_dir: /home/node/app/
     command: sh -c "npm install && npm run dev"
     depends_on:
       - mongo
+    env_file:
+      - .env
     environment:
       MONGODB_URI: mongodb://mongo:27017/payload
       PORT: 3000
       NODE_ENV: development
-      PAYLOAD_SECRET: TESTING
+      MEDIA_DIR: /home/node/app/media
+      DOCUMENTS_DIR: /home/node/app/documents
+      PAYLOAD_PUBLIC_SERVER_URL: https://cms.lukas-taido.com
 
   mongo:
     image: mongo:latest
