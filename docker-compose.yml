@@ -12,7 +12,7 @@ services:
       - ./media:/home/node/app/media
       - ./documents:/home/node/app/documents
     working_dir: /home/node/app/
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npm ci --only=production && npm run build && npm run serve"
     depends_on:
       - mongo
     env_file:
@@ -20,7 +20,7 @@ services:
     environment:
       MONGODB_URI: mongodb://mongo:27017/payload
       PORT: 3000
-      NODE_ENV: development
+      NODE_ENV: production
       MEDIA_DIR: /home/node/app/media
       DOCUMENTS_DIR: /home/node/app/documents
       PAYLOAD_PUBLIC_SERVER_URL: https://cms.lukas-taido.com
