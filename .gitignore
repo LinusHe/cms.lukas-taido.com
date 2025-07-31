@@ -171,3 +171,5 @@ build
 
 payload-backup.*
 media.zip
+# Backup data
+backups/
