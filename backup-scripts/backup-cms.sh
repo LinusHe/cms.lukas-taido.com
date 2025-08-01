@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# CMS Backup Script with incremental media backup
+# CMS Backup Script with incremental media backup and safety net
 # Usage: ./backup-cms.sh [daily|weekly|monthly]
 
 BACKUP_TYPE=${1:-daily}
@@ -41,8 +41,39 @@ else
     exit 1
 fi
 
-# 2. Check media folder changes
+# Function to check if we need a safety backup
+check_safety_backup() {
+    local backup_type="$1"
+    local folder_name="$2"
+    
+    # Find newest backup file across all backup types
+    local newest_backup=$(find "$BACKUP_DIR" -name "${folder_name}-*.tar.gz" -type f -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -1 | cut -d' ' -f2)
+    
+    if [ -z "$newest_backup" ]; then
+        echo "$(date): ⚠ No existing $folder_name backup found - creating safety backup"
+        return 0  # Need backup
+    fi
+    
+    # Check age of newest backup (5 days = 432000 seconds)
+    local backup_age=$(( $(date +%s) - $(stat -c %Y "$newest_backup" 2>/dev/null || echo 0) ))
+    if [ $backup_age -gt 432000 ]; then
+        echo "$(date): ⚠ Latest $folder_name backup is $(($backup_age / 86400)) days old - creating safety backup"
+        return 0  # Need backup
+    fi
+    
+    return 1  # No backup needed
+}
+
+# 2. Media backup logic
 echo "$(date): Checking media changes..."
+FORCE_MEDIA_BACKUP=false
+
+# For monthly backups, always force a complete backup
+if [ "$BACKUP_TYPE" = "monthly" ]; then
+    FORCE_MEDIA_BACKUP=true
+    echo "$(date): Monthly backup - forcing media backup regardless of changes"
+fi
+
 if [ -d "media/" ]; then
     CURRENT_MEDIA_HASH=$(find media/ -type f -exec md5sum {} + 2>/dev/null | sort | md5sum | cut -d' ' -f1)
     LAST_MEDIA_HASH=""
@@ -51,8 +82,21 @@ if [ -d "media/" ]; then
         LAST_MEDIA_HASH=$(cat "$BACKUP_DIR/checksums/media-last.hash")
     fi
 
-    if [ "$CURRENT_MEDIA_HASH" != "$LAST_MEDIA_HASH" ]; then
+    # Check if we need a backup
+    NEED_MEDIA_BACKUP=false
+    
+    if [ "$FORCE_MEDIA_BACKUP" = "true" ]; then
+        NEED_MEDIA_BACKUP=true
+    elif [ "$CURRENT_MEDIA_HASH" != "$LAST_MEDIA_HASH" ]; then
         echo "$(date): Media changes detected - creating backup..."
+        NEED_MEDIA_BACKUP=true
+    elif check_safety_backup "$BACKUP_TYPE" "media"; then
+        NEED_MEDIA_BACKUP=true
+    else
+        echo "$(date): ⏭ Media unchanged and recent backup exists - no backup needed"
+    fi
+
+    if [ "$NEED_MEDIA_BACKUP" = "true" ]; then
         MEDIA_BACKUP_FILE="$BACKUP_DIR/$BACKUP_TYPE/media-$TIMESTAMP.tar.gz"
         tar -czf "$MEDIA_BACKUP_FILE" media/
         if [ $? -eq 0 ]; then
@@ -63,15 +107,21 @@ if [ -d "media/" ]; then
         else
             echo "$(date): ✗ Media backup failed!"
         fi
-    else
-        echo "$(date): ⏭ Media unchanged - no backup needed"
     fi
 else
     echo "$(date): ⚠ Media directory not found"
 fi
 
-# 3. Check documents folder changes
+# 3. Documents backup logic
 echo "$(date): Checking documents changes..."
+FORCE_DOCS_BACKUP=false
+
+# For monthly backups, always force a complete backup
+if [ "$BACKUP_TYPE" = "monthly" ]; then
+    FORCE_DOCS_BACKUP=true
+    echo "$(date): Monthly backup - forcing documents backup regardless of changes"
+fi
+
 if [ -d "documents/" ]; then
     CURRENT_DOCS_HASH=$(find documents/ -type f -exec md5sum {} + 2>/dev/null | sort | md5sum | cut -d' ' -f1)
     LAST_DOCS_HASH=""
@@ -80,8 +130,21 @@ if [ -d "documents/" ]; then
         LAST_DOCS_HASH=$(cat "$BACKUP_DIR/checksums/documents-last.hash")
     fi
 
-    if [ "$CURRENT_DOCS_HASH" != "$LAST_DOCS_HASH" ]; then
+    # Check if we need a backup
+    NEED_DOCS_BACKUP=false
+    
+    if [ "$FORCE_DOCS_BACKUP" = "true" ]; then
+        NEED_DOCS_BACKUP=true
+    elif [ "$CURRENT_DOCS_HASH" != "$LAST_DOCS_HASH" ]; then
         echo "$(date): Documents changes detected - creating backup..."
+        NEED_DOCS_BACKUP=true
+    elif check_safety_backup "$BACKUP_TYPE" "documents"; then
+        NEED_DOCS_BACKUP=true
+    else
+        echo "$(date): ⏭ Documents unchanged and recent backup exists - no backup needed"
+    fi
+
+    if [ "$NEED_DOCS_BACKUP" = "true" ]; then
         DOCS_BACKUP_FILE="$BACKUP_DIR/$BACKUP_TYPE/documents-$TIMESTAMP.tar.gz"
         tar -czf "$DOCS_BACKUP_FILE" documents/
         if [ $? -eq 0 ]; then
@@ -92,8 +155,6 @@ if [ -d "documents/" ]; then
         else
             echo "$(date): ✗ Documents backup failed!"
         fi
-    else
-        echo "$(date): ⏭ Documents unchanged - no backup needed"
     fi
 else
     echo "$(date): ⚠ Documents directory not found"
