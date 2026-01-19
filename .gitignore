@@ -173,3 +173,6 @@ payload-backup.*
 media.zip
 # Backup data
 backups/
+
+# Backup files
+*.backup
