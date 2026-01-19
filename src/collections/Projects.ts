@@ -120,6 +120,14 @@ const Projects: CollectionConfig = {
           name: "caption",
           type: "text",
         },
+        {
+          name: "maxWidth",
+          type: "number",
+          admin: {
+            description:
+              "Optional: Maximum width in pixels. Leave empty for full width. Useful for smaller images like newspaper clippings.",
+          },
+        },
       ],
     },
   ],
