@@ -12,7 +12,7 @@ services:
       - ./media:/home/node/app/media
       - ./documents:/home/node/app/documents
     working_dir: /home/node/app/
-    command: sh -c "npm ci --only=production && npm run build && npm run serve"
+    command: sh -c "npm ci --include=dev && npm run build && npm run serve"
     depends_on:
       - mongo
     env_file:
