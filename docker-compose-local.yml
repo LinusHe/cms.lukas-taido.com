@@ -1,0 +1,36 @@
+services:
+
+  payload:
+    image: node:18-alpine
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/home/node/app
+      - node_modules:/home/node/app/node_modules
+      - ./media:/home/node/app/media
+      - ./documents:/home/node/app/documents
+    working_dir: /home/node/app/
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - mongo
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/payload
+      SERVER_URL: http://localhost:3001
+      PORT: 3000
+      NODE_ENV: development
+      PAYLOAD_SECRET: local-dev-secret-change-in-production
+      MEDIA_DIR: /home/node/app/media
+      DOCUMENTS_DIR: /home/node/app/documents
+
+  mongo:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    command: mongod --storageEngine=wiredTiger --bind_ip_all
+    volumes:
+      - data:/data/db
+    restart: unless-stopped
+
+volumes:
+  data:
+  node_modules:
